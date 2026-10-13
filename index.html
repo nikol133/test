@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalkulačka firemní akce</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #181b22;
+    --panel-2: #20242d;
+    --line: #2c313c;
+    --text: #e8eaf0;
+    --muted: #8b92a3;
+    --accent: #4f8cff;
+    --accent-text: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 17px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 640px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 28px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 28px; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .row { margin-bottom: 22px; }
+  .row:last-child { margin-bottom: 0; }
+  .label { display: block; font-weight: 600; margin-bottom: 10px; }
+
+  .stepper { display: flex; gap: 10px; }
+  .stepper button {
+    width: 64px; height: 64px; flex: none;
+    font-size: 28px; font-weight: 600;
+  }
+  .stepper input {
+    flex: 1; min-width: 0; height: 64px;
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 12px;
+    font-size: 26px; font-weight: 600; text-align: center;
+  }
+  .stepper input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .toggle button { height: 60px; font-size: 19px; font-weight: 600; }
+
+  button {
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 12px;
+    cursor: pointer; font-family: inherit;
+    transition: background .12s, border-color .12s;
+  }
+  button:hover { border-color: var(--muted); }
+  button[aria-pressed="true"] {
+    background: var(--accent); border-color: var(--accent); color: var(--accent-text);
+  }
+
+  .result .line {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 8px 0; font-variant-numeric: tabular-nums;
+  }
+  .result .muted { color: var(--muted); }
+  .result .total {
+    border-top: 1px solid var(--line); margin-top: 8px; padding-top: 16px;
+    font-size: 26px; font-weight: 700;
+  }
+
+  details summary { cursor: pointer; font-weight: 600; }
+  .pricelist { margin: 14px 0 0; padding: 0; list-style: none; }
+  .pricelist li {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 6px 0; border-bottom: 1px solid var(--line); color: var(--muted);
+  }
+  .pricelist li span:last-child { color: var(--text); white-space: nowrap; }
+  .note { color: var(--muted); font-size: 14px; margin: 12px 0 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Kalkulačka firemní akce</h1>
+  <p class="sub">Orientační cena podle počtu hostů, délky a služeb.</p>
+
+  <section class="card">
+    <div class="row">
+      <span class="label">Počet hostů</span>
+      <div class="stepper">
+        <button type="button" data-step="hoste" data-delta="-5" aria-label="Ubrat 5 hostů">−</button>
+        <input id="hoste" type="number" inputmode="numeric" min="1" value="50">
+        <button type="button" data-step="hoste" data-delta="5" aria-label="Přidat 5 hostů">+</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="label">Délka akce (hodiny)</span>
+      <div class="stepper">
+        <button type="button" data-step="hodiny" data-delta="-1" aria-label="Ubrat hodinu">−</button>
+        <input id="hodiny" type="number" inputmode="numeric" min="1" value="4">
+        <button type="button" data-step="hodiny" data-delta="1" aria-label="Přidat hodinu">+</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="label">Open bar</span>
+      <div class="toggle" data-toggle="openBar">
+        <button type="button" data-value="ano">Ano</button>
+        <button type="button" data-value="ne" aria-pressed="true">Ne</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="label">DJ</span>
+      <div class="toggle" data-toggle="dj">
+        <button type="button" data-value="ano">Ano</button>
+        <button type="button" data-value="ne" aria-pressed="true">Ne</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="label">Dekorace</span>
+      <div class="toggle" data-toggle="dekorace">
+        <button type="button" data-value="ano">Ano</button>
+        <button type="button" data-value="ne" aria-pressed="true">Ne</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card result" aria-live="polite">
+    <div class="line"><span>Cena bez DPH</span><span id="bezDph">0 Kč</span></div>
+    <div class="line muted"><span>DPH 21 %</span><span id="dph">0 Kč</span></div>
+    <div class="line total"><span>Cena s DPH</span><span id="sDph">0 Kč</span></div>
+  </section>
+
+  <section class="card">
+    <details open>
+      <summary>Ceník (ukázkové ceny bez DPH)</summary>
+      <ul class="pricelist" id="cenikList"></ul>
+      <p class="note">Ceny se upravují v souboru <code>index.html</code> v objektu <code>CENIK</code>.</p>
+    </details>
+  </section>
+</main>
+
+<script>
+  // ================================================================
+  //  CENÍK — UKÁZKOVÉ CENY (bez DPH, v Kč). PŘEPIŠTE PODLE SEBE.
+  // ================================================================
+  const CENIK = {
+    pronajemZaHodinu:      2500, // pronájem prostoru, za každou hodinu
+    obcerstveniNaHosta:     450, // základní občerstvení, za hosta (jednorázově)
+    openBarNaHostaZaHodinu: 120, // open bar, za hosta a hodinu
+    djZaHodinu:            2000, // DJ, za každou hodinu
+    dekoracePausal:        3000, // dekorace, pevná částka
+    dekoraceNaHosta:         50, // dekorace, příplatek za hosta
+  };
+  const SAZBA_DPH = 0.21;
+  // ================================================================
+
+  const stav = { openBar: false, dj: false, dekorace: false };
+  const kc = n => Math.round(n).toLocaleString("cs-CZ") + " Kč";
+  const cislo = id => Math.max(1, parseInt(document.getElementById(id).value, 10) || 0);
+
+  function spocitej() {
+    const hoste = cislo("hoste");
+    const hodiny = cislo("hodiny");
+
+    let zaklad = CENIK.pronajemZaHodinu * hodiny + CENIK.obcerstveniNaHosta * hoste;
+    if (stav.openBar)  zaklad += CENIK.openBarNaHostaZaHodinu * hoste * hodiny;
+    if (stav.dj)       zaklad += CENIK.djZaHodinu * hodiny;
+    if (stav.dekorace) zaklad += CENIK.dekoracePausal + CENIK.dekoraceNaHosta * hoste;
+
+    const dph = zaklad * SAZBA_DPH;
+    document.getElementById("bezDph").textContent = kc(zaklad);
+    document.getElementById("dph").textContent = kc(dph);
+    document.getElementById("sDph").textContent = kc(zaklad + dph);
+  }
+
+  document.querySelectorAll("[data-step]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const input = document.getElementById(btn.dataset.step);
+      const nova = (parseInt(input.value, 10) || 0) + Number(btn.dataset.delta);
+      input.value = Math.max(1, nova);
+      spocitej();
+    });
+  });
+
+  document.querySelectorAll("#hoste, #hodiny").forEach(input => {
+    input.addEventListener("input", spocitej);
+    input.addEventListener("blur", () => { input.value = cislo(input.id); spocitej(); });
+  });
+
+  document.querySelectorAll("[data-toggle]").forEach(group => {
+    group.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        stav[group.dataset.toggle] = btn.dataset.value === "ano";
+        group.querySelectorAll("button").forEach(b =>
+          b.setAttribute("aria-pressed", String(b === btn)));
+        spocitej();
+      });
+    });
+  });
+
+  const polozky = [
+    ["Pronájem prostoru", kc(CENIK.pronajemZaHodinu) + " / hod"],
+    ["Občerstvení", kc(CENIK.obcerstveniNaHosta) + " / host"],
+    ["Open bar", kc(CENIK.openBarNaHostaZaHodinu) + " / host / hod"],
+    ["DJ", kc(CENIK.djZaHodinu) + " / hod"],
+    ["Dekorace", kc(CENIK.dekoracePausal) + " + " + kc(CENIK.dekoraceNaHosta) + " / host"],
+  ];
+  document.getElementById("cenikList").innerHTML = polozky
+    .map(([n, c]) => `<li><span>${n}</span><span>${c}</span></li>`).join("");
+
+  spocitej();
+</script>
+</body>
+</html>
