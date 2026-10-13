@@ -74,12 +74,22 @@
   }
 
   details summary { cursor: pointer; font-weight: 600; }
-  .pricelist { margin: 14px 0 0; padding: 0; list-style: none; }
-  .pricelist li {
-    display: flex; justify-content: space-between; gap: 12px;
-    padding: 6px 0; border-bottom: 1px solid var(--line); color: var(--muted);
+  .pricelist { margin: 14px 0 0; }
+  .price {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 8px 0; border-bottom: 1px solid var(--line);
   }
-  .pricelist li span:last-child { color: var(--text); white-space: nowrap; }
+  .price label { color: var(--muted); }
+  .price .field { display: flex; align-items: center; gap: 8px; flex: none; }
+  .price input {
+    width: 110px; height: 48px; padding: 0 10px;
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px;
+    font: inherit; font-size: 18px; font-weight: 600; text-align: right;
+  }
+  .price input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .price .unit { color: var(--muted); font-size: 14px; width: 92px; }
+  .reset { width: 100%; height: 52px; margin-top: 16px; font-size: 17px; font-weight: 600; }
   .note { color: var(--muted); font-size: 14px; margin: 12px 0 0; }
 </style>
 </head>
@@ -134,33 +144,45 @@
 
   <section class="card result" aria-live="polite">
     <div class="line"><span>Cena bez DPH</span><span id="bezDph">0 Kč</span></div>
-    <div class="line muted"><span>DPH 21 %</span><span id="dph">0 Kč</span></div>
+    <div class="line muted"><span id="dphLabel">DPH 21 %</span><span id="dph">0 Kč</span></div>
     <div class="line total"><span>Cena s DPH</span><span id="sDph">0 Kč</span></div>
   </section>
 
   <section class="card">
     <details open>
-      <summary>Ceník (ukázkové ceny bez DPH)</summary>
-      <ul class="pricelist" id="cenikList"></ul>
-      <p class="note">Ceny se upravují v souboru <code>index.html</code> v objektu <code>CENIK</code>.</p>
+      <summary>Ceník – upravte podle sebe (ceny bez DPH)</summary>
+      <div class="pricelist" id="cenikList"></div>
+      <button type="button" class="reset" id="reset">Obnovit ukázkové ceny</button>
+      <p class="note">Změny se počítají hned a uloží se v tomto prohlížeči.</p>
     </details>
   </section>
 </main>
 
 <script>
-  // ================================================================
-  //  CENÍK — UKÁZKOVÉ CENY (bez DPH, v Kč). PŘEPIŠTE PODLE SEBE.
-  // ================================================================
-  const CENIK = {
-    pronajemZaHodinu:      2500, // pronájem prostoru, za každou hodinu
-    obcerstveniNaHosta:     450, // základní občerstvení, za hosta (jednorázově)
-    openBarNaHostaZaHodinu: 120, // open bar, za hosta a hodinu
-    djZaHodinu:            2000, // DJ, za každou hodinu
-    dekoracePausal:        3000, // dekorace, pevná částka
-    dekoraceNaHosta:         50, // dekorace, příplatek za hosta
+  // Ukázkové ceny (bez DPH, v Kč). Upravují se přímo na stránce v sekci Ceník.
+  const VYCHOZI_CENIK = {
+    pronajemZaHodinu:      2500,
+    obcerstveniNaHosta:     450,
+    openBarNaHostaZaHodinu: 120,
+    djZaHodinu:            2000,
+    dekoracePausal:        3000,
+    dekoraceNaHosta:         50,
+    dphProcent:              21,
   };
-  const SAZBA_DPH = 0.21;
-  // ================================================================
+  const POLOZKY = [
+    ["pronajemZaHodinu",       "Pronájem prostoru",   "Kč / hod"],
+    ["obcerstveniNaHosta",     "Občerstvení",         "Kč / host"],
+    ["openBarNaHostaZaHodinu", "Open bar",            "Kč / host / hod"],
+    ["djZaHodinu",             "DJ",                  "Kč / hod"],
+    ["dekoracePausal",         "Dekorace – paušál",   "Kč"],
+    ["dekoraceNaHosta",        "Dekorace – za hosta", "Kč / host"],
+    ["dphProcent",             "Sazba DPH",           "%"],
+  ];
+  const KLIC = "kalkulacka-cenik";
+
+  let CENIK = { ...VYCHOZI_CENIK };
+  try { Object.assign(CENIK, JSON.parse(localStorage.getItem(KLIC)) || {}); } catch (e) {}
+  const uloz = () => { try { localStorage.setItem(KLIC, JSON.stringify(CENIK)); } catch (e) {} };
 
   const stav = { openBar: false, dj: false, dekorace: false };
   const kc = n => Math.round(n).toLocaleString("cs-CZ") + " Kč";
@@ -175,7 +197,8 @@
     if (stav.dj)       zaklad += CENIK.djZaHodinu * hodiny;
     if (stav.dekorace) zaklad += CENIK.dekoracePausal + CENIK.dekoraceNaHosta * hoste;
 
-    const dph = zaklad * SAZBA_DPH;
+    const dph = zaklad * CENIK.dphProcent / 100;
+    document.getElementById("dphLabel").textContent = `DPH ${CENIK.dphProcent.toLocaleString("cs-CZ")} %`;
     document.getElementById("bezDph").textContent = kc(zaklad);
     document.getElementById("dph").textContent = kc(dph);
     document.getElementById("sDph").textContent = kc(zaklad + dph);
@@ -206,15 +229,34 @@
     });
   });
 
-  const polozky = [
-    ["Pronájem prostoru", kc(CENIK.pronajemZaHodinu) + " / hod"],
-    ["Občerstvení", kc(CENIK.obcerstveniNaHosta) + " / host"],
-    ["Open bar", kc(CENIK.openBarNaHostaZaHodinu) + " / host / hod"],
-    ["DJ", kc(CENIK.djZaHodinu) + " / hod"],
-    ["Dekorace", kc(CENIK.dekoracePausal) + " + " + kc(CENIK.dekoraceNaHosta) + " / host"],
-  ];
-  document.getElementById("cenikList").innerHTML = polozky
-    .map(([n, c]) => `<li><span>${n}</span><span>${c}</span></li>`).join("");
+  const cenikList = document.getElementById("cenikList");
+  cenikList.innerHTML = POLOZKY.map(([klic, nazev, jednotka]) => `
+    <div class="price">
+      <label for="c-${klic}">${nazev}</label>
+      <span class="field">
+        <input id="c-${klic}" data-cena="${klic}" type="number" inputmode="decimal" min="0" step="any">
+        <span class="unit">${jednotka}</span>
+      </span>
+    </div>`).join("");
+
+  function vyplnCenik() {
+    cenikList.querySelectorAll("[data-cena]").forEach(i => { i.value = CENIK[i.dataset.cena]; });
+  }
+  cenikList.querySelectorAll("[data-cena]").forEach(input => {
+    input.addEventListener("input", () => {
+      const v = parseFloat(input.value.replace(",", "."));
+      CENIK[input.dataset.cena] = isFinite(v) && v >= 0 ? v : 0;
+      uloz();
+      spocitej();
+    });
+  });
+  document.getElementById("reset").addEventListener("click", () => {
+    CENIK = { ...VYCHOZI_CENIK };
+    uloz();
+    vyplnCenik();
+    spocitej();
+  });
+  vyplnCenik();
 
   spocitej();
 </script>
