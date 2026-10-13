@@ -1,0 +1,14 @@
+// HOT PEPPERS AI MARKETING HUB – Prisma schema
+// Blok 1: pouze konfigurace generátoru a datového zdroje.
+// Modely (Campaign, Offer, OfferCriterionScore, AiArtifact, BrandProfile, Settings)
+// se přidají v bloku 2 (hodiny 4–6) podle PROJECT_SPEC.md, kap. 4.
+// Připojovací URL je v prisma.config.ts (Prisma 7 ji ve schématu nepodporuje).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/db/generated"
+}
+
+datasource db {
+  provider = "sqlite"
+}

@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+/*
+ * Design tokeny – prémiový tmavý režim: antracit/černá,
+ * tlumené fialové a růžové akcenty. Kontrast textu ≥ 4.5:1 (WCAG AA).
+ */
+@theme {
+  --color-bg: #0c0c10;
+  --color-surface: #15151b;
+  --color-surface-2: #1d1d25;
+  --color-border: #2a2a35;
+  --color-fg: #ececf1;
+  --color-muted: #a3a3b2;
+  --color-accent: #b197fc;
+  --color-accent-strong: #9775fa;
+  --color-pink: #f78fb3;
+  --color-demo: #fbbf24;
+  --color-danger: #f87171;
+  --color-success: #4ade80;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+}
+
+/* Viditelný fokus pro klávesnicovou navigaci. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
